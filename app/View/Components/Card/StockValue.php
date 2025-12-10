@@ -2,29 +2,74 @@
 
 namespace App\View\Components\Card;
 
-use Closure;
 use Illuminate\View\Component;
-use Illuminate\Contracts\View\View;
 
 class StockValue extends Component
 {
-    /**
-     * Create a new component instance.
-     */
-    public function __construct()
+    public $value;
+    public $previousValue;
+    public $currency = '$';
+    public $showChange = true;
+    public $valuationMethod;
+    
+    public function __construct($value, $previousValue = null, $currency = '$', $showChange = true, $valuationMethod = null)
     {
-        //
+        $this->value = $value;
+        $this->previousValue = $previousValue;
+        $this->currency = $currency;
+        $this->showChange = $showChange;
+        $this->valuationMethod = $valuationMethod;
     }
-
-    /**
-     * Get the view / contents that represent the component.
-     */
-    public function render(): View|Closure|string
+    
+    public function getChangePercentage()
     {
-        return <<<'blade'
-<div>
-    <!-- Nothing in life is to be feared, it is only to be understood. Now is the time to understand more, so that we may fear less. - Marie Curie -->
-</div>
-blade;
+        if (!$this->previousValue || $this->previousValue == 0) {
+            return null;
+        }
+        
+        return (($this->value - $this->previousValue) / $this->previousValue) * 100;
+    }
+    
+    public function getChangeColor()
+    {
+        $change = $this->getChangePercentage();
+        
+        if ($change === null) return 'gray';
+        
+        return $change >= 0 ? 'green' : 'red';
+    }
+    
+    public function getChangeIcon()
+    {
+        $change = $this->getChangePercentage();
+        
+        if ($change === null) return 'fa-minus';
+        
+        return $change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+    }
+    
+    public function getFormattedChange()
+    {
+        $change = $this->getChangePercentage();
+        
+        if ($change === null) return 'N/A';
+        
+        return sprintf('%+.1f%%', $change);
+    }
+    
+    public function getValuationMethodLabel()
+    {
+        return match($this->valuationMethod) {
+            'fifo' => 'FIFO',
+            'lifo' => 'LIFO',
+            'average_cost' => 'Average Cost',
+            'weighted_average' => 'Weighted Average',
+            default => 'Total Value'
+        };
+    }
+    
+    public function render()
+    {
+        return view('components.card.stock-value');
     }
 }
